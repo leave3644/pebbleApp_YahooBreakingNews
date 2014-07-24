@@ -1,60 +1,124 @@
-#include <pebble.h>
+#include "pebble.h"
+
+#define NUM_MENU_SECTIONS 1
+#define NUM_MENU_ITEMS 3
 
 static Window *window;
-static TextLayer *text_layer;
 
-static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Select");
+// This is a simple menu layer
+static SimpleMenuLayer *simple_menu_layer;
+
+// A simple menu layer can have multiple sections
+static SimpleMenuSection menu_sections[NUM_MENU_SECTIONS];
+
+// Each section is composed of a number of menu items
+static SimpleMenuItem menu_items[NUM_MENU_ITEMS];
+
+static bool special_flag = false;
+
+static int hit_count = 0;
+
+// You can capture when the user selects a menu icon with a menu item select callback
+static void menu_select_callback(int index, void *ctx) {
+  // Here we just change the subtitle to a literal string
+  menu_items[index].subtitle = "You've hit select here!";
+  // Mark the layer to be updated
+  layer_mark_dirty(simple_menu_layer_get_layer(simple_menu_layer));
 }
 
-static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Up");
+// You can specify special callbacks to differentiate functionality of a menu item
+static void special_select_callback(int index, void *ctx) {
+  // Of course, you can do more complicated things in a menu item select callback
+  // Here, we have a simple toggle
+  special_flag = !special_flag;
+
+  SimpleMenuItem *menu_item = &menu_items[index];
+
+  if (special_flag) {
+    menu_item->subtitle = "Okay, it's not so special.";
+  } else {
+    menu_item->subtitle = "Well, maybe a little.";
+  }
+
+  if (++hit_count > 5) {
+    menu_item->title = "Very Special Item";
+  }
+
+  // Mark the layer to be updated
+  layer_mark_dirty(simple_menu_layer_get_layer(simple_menu_layer));
 }
 
-static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Down");
-}
-
-static void click_config_provider(void *context) {
-  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
-  window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
-  window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
-}
-
+// This initializes the menu upon window load
 static void window_load(Window *window) {
+  // We'll have to load the icon before we can use it
+  //menu_icon_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_MENU_ICON_1);
+
+  // Although we already defined NUM_FIRST_MENU_ITEMS, you can define
+  // an int as such to easily change the order of menu items later
+  int num_a_items = 0;
+
+  // This is an example of how you'd set a simple menu item
+  menu_items[num_a_items++] = (SimpleMenuItem){
+    // You should give each menu item a title and callback
+    .title = "First Item",
+    .callback = menu_select_callback,
+  };
+  // The menu items appear in the order saved in the menu items array
+  menu_items[num_a_items++] = (SimpleMenuItem){
+    .title = "Second Item",
+    // You can also give menu items a subtitle
+    .subtitle = "Here's a subtitle",
+    .callback = menu_select_callback,
+  };
+  menu_items[num_a_items++] = (SimpleMenuItem){
+    .title = "Third Item",
+    .subtitle = "This has an icon",
+    .callback = menu_select_callback
+  };
+
+  // This initializes the second section
+  menu_items[0] = (SimpleMenuItem){
+    .title = "Special Item",
+    // You can use different callbacks for your menu items
+    .callback = special_select_callback,
+  };
+
+  // Bind the menu items to the corresponding menu sections
+  menu_sections[0] = (SimpleMenuSection){
+    .num_items = NUM_MENU_ITEMS,
+    .items = menu_items,
+  };
+
+  // Now we prepare to initialize the simple menu layer
+  // We need the bounds to specify the simple menu layer's viewport size
+  // In this case, it'll be the same as the window's
   Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
+  GRect bounds = layer_get_frame(window_layer);
 
-  text_layer = text_layer_create((GRect) { .origin = { 0, 72 }, .size = { bounds.size.w, 20 } });
-  text_layer_set_text(text_layer, "Press a button");
-  text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(text_layer));
+  // Initialize the simple menu layer
+  simple_menu_layer = simple_menu_layer_create(bounds, window, menu_sections, NUM_MENU_SECTIONS, NULL);
+
+  // Add it to the window for display
+  layer_add_child(window_layer, simple_menu_layer_get_layer(simple_menu_layer));
 }
 
-static void window_unload(Window *window) {
-  text_layer_destroy(text_layer);
+// Deinitialize resources on window unload that were initialized on window load
+void window_unload(Window *window) {
+  simple_menu_layer_destroy(simple_menu_layer);
 }
 
-static void init(void) {
+int main(void) {
   window = window_create();
-  window_set_click_config_provider(window, click_config_provider);
+
+  // Setup the window handlers
   window_set_window_handlers(window, (WindowHandlers) {
     .load = window_load,
     .unload = window_unload,
   });
-  const bool animated = true;
-  window_stack_push(window, animated);
-}
 
-static void deinit(void) {
-  window_destroy(window);
-}
-
-int main(void) {
-  init();
-
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Done initializing, pushed window: %p", window);
+  window_stack_push(window, true /* Animated */);
 
   app_event_loop();
-  deinit();
+
+  window_destroy(window);
 }

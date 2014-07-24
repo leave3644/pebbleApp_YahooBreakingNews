@@ -1,0 +1,8 @@
+argv = ['/Users/grese/pebble-dev/PebbleSDK-2.2/Pebble/waf', 'configure', 'build']
+environ = {'SSH_AUTH_SOCK': '/tmp/launch-qXc1Jx/Listeners', 'PYTHONPATH': '/Users/grese/pebble-dev/PebbleSDK-current/bin/../.env/lib/python2.7/site-packages', 'VERSIONER_PYTHON_PREFER_32_BIT': 'no', 'SHELL': '/bin/sh', 'LOGNAME': 'grese', 'USER': 'grese', 'NVM_DIR': '/Users/grese/.nvm', 'HOME': '/Users/grese', 'ITERM_PROFILE': 'JMG', 'PATH': '/Users/grese/pebble-dev/PebbleSDK-2.2/arm-cs-tools/bin:/Users/grese/pebble-dev/PebbleSDK-current/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin', 'TMPDIR': '/var/folders/yz/0t83rg1s49z69jf5g7q6yl3w002dgv/T/', 'TERM_PROGRAM': 'iTerm.app', 'LANG': 'en_US.UTF-8', 'TERM': 'xterm', 'Apple_PubSub_Socket_Render': '/tmp/launch-5UPUtd/Render', 'VERSIONER_PYTHON_VERSION': '2.7', 'SHLVL': '2', 'PWD': '/Users/grese/Projects/Pebble/pebbleApp_YahooBreakingNews/yahoo_breaking_news', '__CF_USER_TEXT_ENCODING': '0x135FB:0:0', 'ITERM_SESSION_ID': 'w0t0p0', '_': '/Users/grese/pebble-dev/PebbleSDK-2.2/Pebble/waf', '__CHECKFIX1436934': '1'}
+files = ['/Users/grese/Projects/Pebble/pebbleApp_YahooBreakingNews/yahoo_breaking_news/wscript']
+hash = 4672844372416070989
+options = {'files': '', 'jobs': 8, 'verbose': 0, 'nocache': False, 'progress_bar': 0, 'timestamp': None, 'distcheck_args': None, 'top': '', 'destdir': '', 'keep': 0, 'zones': '', 'debug': False, 'prefix': '/usr/local/', 'download': False, 'force': False, 'targets': '', 'out': ''}
+out_dir = '/Users/grese/Projects/Pebble/pebbleApp_YahooBreakingNews/yahoo_breaking_news/build'
+run_dir = '/Users/grese/Projects/Pebble/pebbleApp_YahooBreakingNews/yahoo_breaking_news'
+top_dir = '/Users/grese/Projects/Pebble/pebbleApp_YahooBreakingNews/yahoo_breaking_news'
