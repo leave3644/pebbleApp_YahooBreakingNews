@@ -1,7 +1,18 @@
 #include "pebble.h"
 
+
 #define NUM_MENU_SECTIONS 1
 #define NUM_MENU_ITEMS 10
+
+//Splash intro window
+static Window *intro_window;
+static BitmapLayer *intro_layer;
+static GBitmap *intro_gbitmap;
+
+//
+static int
+  current_title_index = 0,
+  current_summary_index = 0;
 
 static Window *window;
 
@@ -45,6 +56,156 @@ static void show_scrolling_detail_layer(){
     layer_add_child(window_layer, scroll_layer_get_layer(scroll_layer));
 }
 
+//this is intro windows display logo while loading the data
+static void intro_window_load(Window *window){
+
+  intro_gbitmap = gbitmap_create_with_resource(RESOURCE_ID_LOGO);
+  intro_layer = bitmap_layer_create(CRect(10,0,200,60));
+  bitmap_layer_set_bitmap(intro_layer, intro_gbitmap);
+  layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(intro_layer));
+
+  progress_layer = help_text_layer_create(GRect(10,90,200,30), GColorBlack, GColorClear, false, 0, FONT_KEY_GOTHIC_18_BOLD, GTextAlignmentCenter);
+  text_layer_set_text(progress_layer, "Loading...");
+  layer_add_child(window_get_root_layer(window), text_layer_get_layer(progress_layer));
+}
+
+static void intro_window_unload(Window *window){
+  //Destroy layers
+  bitmap_layer_destroy(intro_layer);
+  gbitmap_destroy(intro_gbitmap);
+  text_layer_destroy(progress_layer);
+
+  window_destroy(window);
+
+}
+
+TextLayer* help_text_layer_create(GRect location, GColor color, GColor background, bool custom_font, GFont *g_font, const char *res_id, GTextAlignment alignment){
+
+  TextLayer *later = text_layer_create(location);
+  text_layer_set_text_color(layer,color);
+  text_layer_set_background_color(layer, background);
+  if(custom_font == true){
+    text_later_set_font(layer,g_font);
+  }
+  else{
+    text_layer_set_font(layer,fonts_get_system_font(res_id));
+  }
+  test_layer_set_text_alignment(layer, alignment);
+
+  return layer;
+}
+
+static void help_app_message_open(int inbound_size, int outbound_size, AppMessageInboxReceived in_received_handler){
+  app_message_register_inbox_received(in_received_handler);
+  app_message_register_inbox_dropped(in_dropped_handler);
+  app_message_register_outbox_failed(out_failed_handler);
+  if(APP_MESSAGE_OPEN == false){
+    app_message_open(inbound_size, outbound_size);
+    APP_MESSAGE_OPEN = true;
+    if(special_flag){
+      help_applog("AppMessage opened.");
+    }
+  }
+
+}
+
+static void in_dropped_handler(AppMessageResult reason, void *context){
+    if(special_flag == true){
+      //output error message
+        if(DEBUG == true)
+        {
+          help_interpret_message_result(reason);
+        }
+
+    }  
+}
+
+static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context){
+     if(special_flag == true){
+      //output error message
+      if(DEBUG == true)
+        {
+          help_interpret_message_result(reason);
+        }
+     }
+}
+
+/*
+ * Convenience app_log shortcut
+ */
+void help_applog(char* message)
+{
+  app_log(APP_LOG_LEVEL_INFO, "C", 0, message);
+}
+
+/*
+ * Convert AppMessageResult to readable console output. Pebble SDK really needs this!
+ */
+void help_interpret_message_result(AppMessageResult app_message_error)
+{
+  if(app_message_error == APP_MSG_OK)
+  {
+    help_applog("APP_MSG_OK");
+  } 
+
+  else if(app_message_error == APP_MSG_SEND_TIMEOUT)
+  {
+    help_applog("APP_MSG_SEND_TIMEOUT");
+  } 
+
+  else if(app_message_error == APP_MSG_SEND_REJECTED)
+  {
+    help_applog("APP_MSG_SEND_REJECTED");
+  }
+
+  else if(app_message_error == APP_MSG_NOT_CONNECTED)
+  {
+    help_applog("APP_MSG_NOT_CONNECTED");
+  }
+
+  else if(app_message_error == APP_MSG_APP_NOT_RUNNING)
+  {
+    help_applog("APP_MSG_APP_NOT_RUNNING");
+  }
+
+  else if(app_message_error == APP_MSG_INVALID_ARGS)
+  {
+    help_applog("APP_MSG_INVALID_ARGS");
+  }
+
+  else if(app_message_error == APP_MSG_BUSY)
+  {
+    help_applog("APP_MSG_BUSY");
+  }
+
+  else if(app_message_error == APP_MSG_BUFFER_OVERFLOW)
+  {
+    help_applog("APP_MSG_BUFFER_OVERFLOW");
+  }
+
+  else if(app_message_error == APP_MSG_ALREADY_RELEASED)
+  {
+    help_applog("APP_MSG_ALREADY_RELEASED");
+  }
+
+  else if(app_message_error == APP_MSG_CALLBACK_ALREADY_REGISTERED)
+  {
+    help_applog("APP_MSG_CALLBACK_ALREADY_REGISTERED");
+  }
+
+  else if(app_message_error == APP_MSG_CALLBACK_NOT_REGISTERED)
+  {
+    help_applog("APP_MSG_CALLBACK_NOT_REGISTERED");
+  }
+
+  else if(app_message_error == APP_MSG_OUT_OF_MEMORY)
+  {
+    help_applog("APP_MSG_OUT_OF_MEMORY");
+  }
+}
+
+
+
 // You can capture when the user selects a menu icon with a menu item select callback
 static void menu_select_callback(int index, void *ctx) {
   // Here we just change the subtitle to a literal string
@@ -74,7 +235,6 @@ static void special_select_callback(int index, void *ctx) {
   layer_mark_dirty(simple_menu_layer_get_layer(simple_menu_layer));
   show_scrolling_detail_layer();
 }
-
 
 
 // This initializes the menu upon window load
@@ -137,13 +297,31 @@ void window_unload(Window *window) {
 }
 
 int main(void) {
-  window = window_create();
+  //window = window_create();
+  
+  // set the intro windows
+  intro_window = window_create();
 
-  // Setup the window handlers
-  window_set_window_handlers(window, (WindowHandlers) {
-    .load = window_load,
-    .unload = window_unload,
-  });
+   // Setup the window handlers
+  // window_set_window_handlers(window, (WindowHandlers) {
+  //   .load = window_load,
+  //   .unload = window_unload,
+  // });
+
+  //new intro page
+  WindowHandlers handlers = {
+        .load = intro_window_load,
+        .unload = intro_window_unload
+  };
+  window_set_window_handlers(intro_window, (WindowHandlers) handlers);
+
+  // increase the appMessage speed
+  app_comm_set_sniff_interval(SNIFF_INTERVAL_REDUCED);
+  help_app_message_open(
+    app_message_inbox_size_maximum();
+    app_message_outbox_size_maximum();
+    (AppMessageInboxReceived)in_recv_handler
+    );
 
   window_stack_push(window, true /* Animated */);
 
