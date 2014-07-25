@@ -1,5 +1,5 @@
-var CHUNKS_LENGTH = 512
-var ASTERIX_PASSWD = "*******"
+var CHUNKS_LENGTH = 512;
+var ASTERIX_PASSWD = "*******";
 //176 <- I DON'T KNOW WHAT THAT NUMBER IS YO
 
 var Utils = {
