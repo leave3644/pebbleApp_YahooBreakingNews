@@ -4,10 +4,6 @@
 #define NUM_MENU_SECTIONS 1
 #define NUM_MENU_ITEMS 10
 
-//Splash intro window
-// static Window *intro_window;
-// static BitmapLayer *intro_layer;
-// static GBitmap *intro_gbitmap;
 
 //
 static int
