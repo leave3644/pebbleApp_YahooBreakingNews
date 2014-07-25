@@ -1,139 +1,116 @@
-/*
- ------------------------------------------
- Yahoo Breaking News for Pebble SmartWatch!
- ------------------------------------------
- */
+var CHUNKS_LENGTH = 512
+var ASTERIX_PASSWD = "*******"
+//176 <- I DON'T KNOW WHAT THAT NUMBER IS YO
 
- /*Read and write helper*/
-var reading = function(key, value) {
+var Utils = {
+    serialize: function(obj) {
+        var str = [];
+        for(var p in obj)
+            str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
+        return '?'+(str.join("&"));
+    },
+    http: function(url, params, cb, errcb) {
+        var req = new XMLHttpRequest();
 
-    window.localStorage.setItem(key,value);
-};
+        req.open('GET', url+this.serialize(params), true);
+        req.onload = function(e) {
+            if (req.readyState != 4) return;
+            if (req.status == 200 || req.status == 201)
+                cb(req.responseText);
+            else
+                errcb();
+        };
+        req.send();
+    },
+    sendQueue: function (queue){
+        var index = retries = 0;
 
-var writing = function(key, defValue) {
+        var doo = function() {
+            if (!queue[index]) return;
 
-     if(window.localStorage.getItem(key) === null){
-        return defValue;
-     } else {
-        return window.localStorage.getItem(key);
-     }
-
-};
-
-function reFetch() {
-    current_int = 0;
-    // get the current news with title and summary
-    var category = reading("category", "breakingNews");
-    news = download(category);
-
-
-}
-
-/*Basic event listener*/
-
-Pebble.addEventListener("ready",
-    function(e) {
-        console.log("Hello world! - Sent from your javascript application.");
-        reFetch();
-    }
-);
-
-Pebble.addEventListener("webviewclosed",
-    function(e) {
-        //get JSON data
-        var config = JSON.parse(decodeURIComponent(e.response));
-        console.log(JSO.stringify(config));
-
-        //save to the local storage
-        writing("breaking news number is ", config.numbers);
-
-        //send the data to watch
-        Pebble.sendAppMessage(
-            {"KEY_DETAIL_SIZE": config.detail_size}
-            );
+            console.log('sending '+JSON.stringify(queue[index]));
+            Pebble.sendAppMessage(queue[index], success, fail);
+        };
+        var success = function() {
+            console.log('Packet sent');
+            index += 1;
+            retries = 0;
+            doo();
         }
-    );
-
-/*get the http request and return to xml response text*/
-var HTTPFetch = function(url, type, callback){
-    var request = new XMLHttpRequest();
-    request.onload = function() {
-        callback(this.responseText);
-    };
-    request.open(type, url);
-    request.send();
-}
-
-var news;
-var current_title = 0;
-var current_sum = 0;
-var numbers = 0;
-
-
-/* Breaking New data*/
-
-function BreakingNews(title, summary) {
-    this.summary = summary;
-    this.title = title;
-};
-
-/*This will fetch the latest feed*/
-var fetchFeed = function(text) {
-    var items = [];
-    while(text.indexOf("<title>") > 0 ) {
-        //Get the current title
-        var title = text.substring(text.indexOf("<title>") + "<title>".length);
-        title = title.substring(0, title.indexOf("</title>"));
-        text = text.substring(text.indexOf("</title>")) + "</title>".length;
-
-        //Get the current summary
-        var sum = text.substring(text.indexOf("<summary>") + "<summary>".length);
-        sum = sum.substring(0, title.indexOf("</summary>"));
-
-        //add the current the title and summary
-        items.push(new BreakingNews(title, sum));
-        text = text.substring(text.indexOf("</summary>") + "</summary>".length);
-        
-    }
-
-    console.log("fetchFeed(): Loading" + items.length + " items ");
-    return items;
-
-};
-
-//download the data from server
-var download = function(category){
-    var url; // load the url string
-    console.log("getting the data from url");
-    if(category == "latest") {
-        url //update url address;
-        console.log("choose the latest one");
-    }
-    else{
-        console.log("didn't choose any option");
-    }
-    HTTPFetch(url, "GET", 
-        function(text) {
-            console.log("Got the Breaking News!");
-            text = text.substring(text.indexOf("<item>") + "<item>".length);
-            news = fetchFeed(text);
-
-            //get the latest 10 breaking news
-            numbers = parseInt(reading("number","10"));
-            console.log("reading(): number of news is " + numbers);
-
-            Pebble.sendAppMessage(
-                {"KEY_QUANTITY" : numbers},
-                function(e) {
-                    console.log("Numbers" + numbers + " sent, start loading.");
-                    //sendNextNews();
-                },
-                function(e) {
-                    console.log("Reading news number failed :( ");;
-                }
-                );
+        var fail = function () {
+            retries += 1;
+            if (retries == 3){
+                console.log('Packet fails, moving on');
+                index += 1;
             }
-        );
-    console.log("Reading request sent");
+            doo();
+        }
+        doo();
+    },
+    send: function(data) {
+        var chunks = Math.ceil(data.length/CHUNKS_LENGTH),
+            queue = [];
+
+        for (var i = 0; i < chunks; i++){
+            var payload = {summary:data.substring(CHUNKS_LENGTH*i, CHUNKS_LENGTH*(i+1))};
+            if (i == 0) payload.start = "yes";
+            if (i == chunks-1) payload.end = "yes";
+
+            queue.push(payload);
+        }
+
+        Utils.sendQueue(queue);
+    }
 };
 
+var HN = {
+
+    items: [],
+    sendItems: function(items) {
+        var queue = [];
+        items.forEach(function(item, i) {
+            queue.push({"index": i, "headline": item.headline, "uuid": item.uuid});
+        });
+        Utils.sendQueue(queue);
+    },
+    fetch: function() {
+        Utils.http('http://abysmaldismal.corp.ir2.yahoo.com:4080/latency/v1/getNews', null, function(res) {
+            HN.items = JSON.parse(res).news;
+            localStorage.setItem('items', HN.items);
+            HN.sendItems(HN.items);
+        }, function() {
+            HN.sendItems(JSON.parse(localStorage.getItem('items')));
+        });
+    },
+    get: function(i) {
+        Utils.http('http://japi1.global.media.yahoo.com:4080/content/v1/object', {uuid: HN.items[i].uuid }, function(res) {
+            var json = JSON.parse(res),
+                summary = json.headline + (json.summary) ? json.summary : '';
+            Utils.send(summary);
+        });
+    }
+};
+
+Pebble.addEventListener("appmessage", function(e) {
+    var action = Object.keys(e.payload)[0];
+    switch (action) {
+        case "get":
+            HN.get(e.payload[action]);
+            break;
+        case "fetch":
+            HN.fetch();
+            break;
+        case "readlater":
+            HN.readlater(e.payload[action]);
+            break;
+    }
+});
+
+Pebble.addEventListener("webviewclosed", function (e) {
+    if (!e.response) return;
+    var payload = JSON.parse(e.response);
+});
+
+Pebble.addEventListener("ready", function () {
+    setTimeout(HN.fetch, 200);
+});
