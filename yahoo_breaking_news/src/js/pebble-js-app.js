@@ -34,7 +34,7 @@ var Utils = {
             index += 1;
             retries = 0;
             doo();
-        }
+        };
         var fail = function () {
             retries += 1;
             if (retries == 3){
@@ -42,7 +42,7 @@ var Utils = {
                 index += 1;
             }
             doo();
-        }
+        };
         doo();
     },
     send: function(data) {
@@ -81,11 +81,17 @@ var BreakingNews = {
         });
     },
     get: function(i) {
-        Utils.http('http://japi1.global.media.yahoo.com:4080/content/v1/object', {uuid: BreakingNews.items[i].uuid }, function(res) {
+        var uuid = BreakingNews.items[i].uuid;
+        /*Utils.http('http://japi1.global.media.yahoo.com:4080/content/v1/object', {uuid: uuid }, function(res) {
             var json = JSON.parse(res),
                 summary = json.headline + (json.summary) ? json.summary : '';
             Utils.send(summary);
-        });
+        }, function(){
+            console.log('<ERROR>: Fetching content from japi...');
+        });*/
+        console.log('Getting content for UUID: '+uuid);
+        var mockSummary = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
+        Utils.send(mockSummary);
     }
 };
 

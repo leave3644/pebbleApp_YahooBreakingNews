@@ -5,6 +5,7 @@ static MenuLayer *menu_layer;
 
 enum {
   KEY_HEADLINE = 0x0,
+  KEY_UUID = 0x1,
   KEY_SUMMARY = 0x3,
   KEY_GET = 0x4,
   KEY_FETCH = 0x5,
@@ -16,21 +17,7 @@ enum {
 static ScrollLayer *scroll_layer;
 static TextLayer *text_layer;
 static TextLayer *title_layer;
-
-// TODO
-/*static ActionBarLayer *action_bar;
-void click_config_provider(void *context) {
-    window_single_click_subscribe(BUTTON_ID_DOWN, (ClickHandler) my_next_click_handler);
-    window_single_click_subscribe(BUTTON_ID_UP, (ClickHandler) my_previous_click_handler);
-}
-  ...
-  // Initialize the action bar:
-  action_bar = action_bar_layer_create();
-  action_bar_layer_add_to_window(action_bar, window);
-  action_bar_layer_set_click_config_provider(action_bar, click_config_provider);
-  // The loading the icons is omitted for brevity... See HeapBitmap.
-  action_bar_layer_set_icon(action_bar, BUTTON_ID_UP, &my_icon_previous);
-  action_bar_layer_set_icon(action_bar, BUTTON_ID_DOWN, &my_icon_next);*/
+static GBitmap *yahoo_logo;
 
 #define NUM_ITEMS 30
 
@@ -42,8 +29,6 @@ typedef struct Post {
 
 Post posts[NUM_ITEMS];
 int i=0;
-
-// SEE http://forums.getpebble.com/discussion/8582/bug-pebble-logs-fails-with-ascii-codec-can-t-encode-character-u-xfc-in-position
 
 static char subtitle[] = "";
 
@@ -141,8 +126,10 @@ static uint16_t menu_get_num_rows_callback(MenuLayer *menu_layer, uint16_t secti
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
     if (i==0 && cell_index->row==0) {
         menu_cell_basic_draw(ctx, cell_layer, "Loading...", NULL, NULL);
+        GRect bounds = yahoo_logo->bounds;
+        graphics_draw_bitmap_in_rect(ctx, yahoo_logo, (GRect) { .origin = { 5, 5 }, .size = bounds.size });
     } else if (i>0) {
-        menu_cell_basic_draw(ctx, cell_layer, posts[cell_index->row].headline, "the subtitle...", NULL);
+        menu_cell_basic_draw(ctx, cell_layer, posts[cell_index->row].headline, "", NULL);
     }
 }
 
@@ -152,7 +139,7 @@ static int16_t menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t s
 }
 
 static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
-  menu_cell_basic_header_draw(ctx, cell_layer, "Yahoo! Breaking News");
+  menu_cell_basic_header_draw(ctx, cell_layer, "Yahoo! Headline News");
 }
 
 void get(uint8_t i) {
@@ -216,8 +203,10 @@ void init(void) {
 int main(void) {
     init();
 
+    yahoo_logo = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_YAHOO_LOGO);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Done initializing, pushed window: %p", window);
     app_event_loop();
 
+    gbitmap_destroy(yahoo_logo);
     window_destroy(window);
 }
