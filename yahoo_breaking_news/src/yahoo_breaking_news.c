@@ -4,9 +4,7 @@ static Window *window;
 static MenuLayer *menu_layer;
 
 enum {
-  KEY_TITLE = 0x0,
-  KEY_POINTS = 0x1,
-  KEY_COMMENTS = 0x2,
+  KEY_HEADLINE = 0x0,
   KEY_SUMMARY = 0x3,
   KEY_GET = 0x4,
   KEY_FETCH = 0x5,
@@ -115,7 +113,7 @@ void view() {
 
 
 static void msg_received(DictionaryIterator *iter, void *context) {
-    Tuple *title = dict_find(iter, KEY_TITLE);
+    Tuple *title = dict_find(iter, KEY_HEADLINE);
     if (title) {
         Post p;
         p.index = dict_find(iter, KEY_INDEX)->value->int8;
