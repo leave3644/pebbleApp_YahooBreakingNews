@@ -11,7 +11,6 @@ enum {
   KEY_GET = 0x4,
   KEY_FETCH = 0x5,
   KEY_INDEX = 0x6,
-  KEY_READLATER = 0x7,
   KEY_START = 0x8,
   KEY_END = 0x9
 };
@@ -39,10 +38,8 @@ void click_config_provider(void *context) {
 
 typedef struct Post {
     int index;
-    char title[128];
-    char subtitle[50];
-    /*int points;
-    int comments;*/
+    char uuid[50];
+    char headline[128];
 } Post;
 
 Post posts[NUM_ITEMS];
@@ -50,32 +47,21 @@ int i=0;
 
 // SEE http://forums.getpebble.com/discussion/8582/bug-pebble-logs-fails-with-ascii-codec-can-t-encode-character-u-xfc-in-position
 
-static char subtitle[] = "0 points · 0 comments";
+static char subtitle[] = "";
 
 int selected = 0;
 int selected_index = 0;
 char summary[1024];
 #define spacing 10
 
-void readlater(uint8_t i) {
-    DictionaryIterator *it;
-    app_message_outbox_begin(&it);
-    Tuplet tuplet = TupletInteger(KEY_READLATER, i);
-    dict_write_tuplet(it, &tuplet);
-    dict_write_end(it);
-    app_message_outbox_send();
-}
-
 static void long_click_handler (ClickRecognizerRef recognizer, void *context){
-
-    readlater(selected_index);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Read Later do");
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Long Click Registered!");
 }
 
 static void click_config_provider(void *context) {
-
     window_long_click_subscribe(BUTTON_ID_SELECT, 500, NULL, long_click_handler);
 }
+
 static void view_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
@@ -85,7 +71,7 @@ static void view_load(Window *window) {
     scroll_layer_set_click_config_onto_window(scroll_layer, window);
 
     title_layer = text_layer_create(max_text_bounds);
-    text_layer_set_text(title_layer, posts[selected].title);
+    text_layer_set_text(title_layer, posts[selected].headline);
     text_layer_set_font(title_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
 
     GSize title_size = text_layer_get_content_size(title_layer);
@@ -133,17 +119,15 @@ static void msg_received(DictionaryIterator *iter, void *context) {
     if (title) {
         Post p;
         p.index = dict_find(iter, KEY_INDEX)->value->int8;
-        strncpy(p.title, title->value->cstring, 128);
+        strncpy(p.headline, title->value->cstring, 128);
         //APP_LOG(APP_LOG_LEVEL_DEBUG, "dada %s", p.title);
-        snprintf(p.subtitle, sizeof(subtitle), "%i points · %i comments", dict_find(iter, KEY_POINTS)->value->int16, dict_find(iter, KEY_COMMENTS)->value->int16);
+        //snprintf(p.subtitle, sizeof(subtitle), "%i points · %i comments", dict_find(iter, KEY_POINTS)->value->int16, dict_find(iter, KEY_COMMENTS)->value->int16);
         posts[i++] = p;
         menu_layer_reload_data(menu_layer);
         layer_mark_dirty(menu_layer_get_layer(menu_layer));
     } else {
         if (dict_find(iter, KEY_START)) strcpy(summary, "");
-
         strcat(summary, dict_find(iter, KEY_SUMMARY)->value->cstring);
-
         if (dict_find(iter, KEY_END)) view();
     }
     title = NULL;
@@ -160,17 +144,17 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
     if (i==0 && cell_index->row==0) {
         menu_cell_basic_draw(ctx, cell_layer, "Loading...", NULL, NULL);
     } else if (i>0) {
-        menu_cell_basic_draw(ctx, cell_layer, posts[cell_index->row].title, posts[cell_index->row].subtitle, NULL);
+        menu_cell_basic_draw(ctx, cell_layer, posts[cell_index->row].headline, "the subtitle...", NULL);
     }
 }
 
 static int16_t menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
-  
+
   return MENU_CELL_BASIC_HEADER_HEIGHT;
 }
 
 static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
-  menu_cell_basic_header_draw(ctx, cell_layer, "Hacker News");
+  menu_cell_basic_header_draw(ctx, cell_layer, "Yahoo! Breaking News");
 }
 
 void get(uint8_t i) {
@@ -197,9 +181,6 @@ void menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *da
     selected_index = posts[cell_index->row].index;
     get(selected_index);
 }
-void menu_long_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
-    readlater(posts[cell_index->row].index);
-}
 
 void window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
@@ -210,8 +191,7 @@ void window_load(Window *window) {
         .draw_row = menu_draw_row_callback,
         .select_click = menu_select_callback,
         .get_header_height = menu_get_header_height_callback,
-        .draw_header = menu_draw_header_callback,
-        .select_long_click = menu_long_select_callback
+        .draw_header = menu_draw_header_callback
     });
 
     menu_layer_set_click_config_onto_window(menu_layer, window);
