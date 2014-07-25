@@ -5,9 +5,9 @@
 #define NUM_MENU_ITEMS 10
 
 //Splash intro window
-static Window *intro_window;
-static BitmapLayer *intro_layer;
-static GBitmap *intro_gbitmap;
+// static Window *intro_window;
+// static BitmapLayer *intro_layer;
+// static GBitmap *intro_gbitmap;
 
 //
 static int
@@ -57,45 +57,45 @@ static void show_scrolling_detail_layer(){
 }
 
 //this is intro windows display logo while loading the data
-static void intro_window_load(Window *window){
+// static void intro_window_load(Window *window){
 
-  intro_gbitmap = gbitmap_create_with_resource(RESOURCE_ID_LOGO);
-  intro_layer = bitmap_layer_create(CRect(10,0,200,60));
-  bitmap_layer_set_bitmap(intro_layer, intro_gbitmap);
-  layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(intro_layer));
+//   intro_gbitmap = gbitmap_create_with_resource(RESOURCE_ID_LOGO);
+//   intro_layer = bitmap_layer_create(CRect(10,0,200,60));
+//   bitmap_layer_set_bitmap(intro_layer, intro_gbitmap);
+//   layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(intro_layer));
 
-  progress_layer = help_text_layer_create(GRect(10,90,200,30), GColorBlack, GColorClear, false, 0, FONT_KEY_GOTHIC_18_BOLD, GTextAlignmentCenter);
-  text_layer_set_text(progress_layer, "Loading...");
-  layer_add_child(window_get_root_layer(window), text_layer_get_layer(progress_layer));
-}
+//   progress_layer = help_text_layer_create(GRect(10,90,200,30), GColorBlack, GColorClear, false, 0, FONT_KEY_GOTHIC_18_BOLD, GTextAlignmentCenter);
+//   text_layer_set_text(progress_layer, "Loading...");
+//   layer_add_child(window_get_root_layer(window), text_layer_get_layer(progress_layer));
+// }
 
-static void intro_window_unload(Window *window){
-  //Destroy layers
-  bitmap_layer_destroy(intro_layer);
-  gbitmap_destroy(intro_gbitmap);
-  text_layer_destroy(progress_layer);
+// static void intro_window_unload(Window *window){
+//   //Destroy layers
+//   bitmap_layer_destroy(intro_layer);
+//   gbitmap_destroy(intro_gbitmap);
+//   text_layer_destroy(progress_layer);
 
-  window_destroy(window);
+//   window_destroy(window);
 
-}
+// }
 
-TextLayer* help_text_layer_create(GRect location, GColor color, GColor background, bool custom_font, GFont *g_font, const char *res_id, GTextAlignment alignment){
+// TextLayer* help_text_layer_create(GRect location, GColor color, GColor background, bool custom_font, GFont *g_font, const char *res_id, GTextAlignment alignment){
 
-  TextLayer *later = text_layer_create(location);
-  text_layer_set_text_color(layer,color);
-  text_layer_set_background_color(layer, background);
-  if(custom_font == true){
-    text_later_set_font(layer,g_font);
-  }
-  else{
-    text_layer_set_font(layer,fonts_get_system_font(res_id));
-  }
-  test_layer_set_text_alignment(layer, alignment);
+//   TextLayer *later = text_layer_create(location);
+//   text_layer_set_text_color(layer,color);
+//   text_layer_set_background_color(layer, background);
+//   if(custom_font == true){
+//     text_later_set_font(layer,g_font);
+//   }
+//   else{
+//     text_layer_set_font(layer,fonts_get_system_font(res_id));
+//   }
+//   test_layer_set_text_alignment(layer, alignment);
 
-  return layer;
-}
+//   return layer;
+// }
 
-static void help_app_message_open(int inbound_size, int outbound_size, AppMessageInboxReceived in_received_handler){
+/*static void help_app_message_open(int inbound_size, int outbound_size, AppMessageInboxReceived in_received_handler){
   app_message_register_inbox_received(in_received_handler);
   app_message_register_inbox_dropped(in_dropped_handler);
   app_message_register_outbox_failed(out_failed_handler);
@@ -129,6 +129,7 @@ static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reas
         }
      }
 }
+*/
 
 /*
  * Convenience app_log shortcut
@@ -300,16 +301,16 @@ int main(void) {
   //window = window_create();
   
   // set the intro windows
-  intro_window = window_create();
+  window = window_create();
 
    // Setup the window handlers
-  // window_set_window_handlers(window, (WindowHandlers) {
-  //   .load = window_load,
-  //   .unload = window_unload,
-  // });
+  window_set_window_handlers(window, (WindowHandlers) {
+    .load = window_load,
+    .unload = window_unload,
+  });
 
   //new intro page
-  WindowHandlers handlers = {
+  /*WindowHandlers handlers = {
         .load = intro_window_load,
         .unload = intro_window_unload
   };
@@ -322,7 +323,7 @@ int main(void) {
     app_message_outbox_size_maximum();
     (AppMessageInboxReceived)in_recv_handler
     );
-
+*/
   window_stack_push(window, true /* Animated */);
 
   app_event_loop();
