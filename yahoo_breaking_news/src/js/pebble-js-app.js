@@ -1,6 +1,4 @@
 var CHUNKS_LENGTH = 512;
-var ASTERIX_PASSWD = "*******";
-//176 <- I DON'T KNOW WHAT THAT NUMBER IS YO
 
 var Utils = {
     serialize: function(obj) {
@@ -63,7 +61,7 @@ var Utils = {
     }
 };
 
-var HN = {
+var BreakingNews = {
 
     items: [],
     sendItems: function(items) {
@@ -75,15 +73,15 @@ var HN = {
     },
     fetch: function() {
         Utils.http('http://abysmaldismal.corp.ir2.yahoo.com:4080/latency/v1/getNews', null, function(res) {
-            HN.items = JSON.parse(res).news;
-            localStorage.setItem('items', HN.items);
-            HN.sendItems(HN.items);
+            BreakingNews.items = JSON.parse(res).news;
+            localStorage.setItem('items', BreakingNews.items);
+            BreakingNews.sendItems(BreakingNews.items);
         }, function() {
-            HN.sendItems(JSON.parse(localStorage.getItem('items')));
+            BreakingNews.sendItems(JSON.parse(localStorage.getItem('items')));
         });
     },
     get: function(i) {
-        Utils.http('http://japi1.global.media.yahoo.com:4080/content/v1/object', {uuid: HN.items[i].uuid }, function(res) {
+        Utils.http('http://japi1.global.media.yahoo.com:4080/content/v1/object', {uuid: BreakingNews.items[i].uuid }, function(res) {
             var json = JSON.parse(res),
                 summary = json.headline + (json.summary) ? json.summary : '';
             Utils.send(summary);
@@ -95,13 +93,13 @@ Pebble.addEventListener("appmessage", function(e) {
     var action = Object.keys(e.payload)[0];
     switch (action) {
         case "get":
-            HN.get(e.payload[action]);
+            BreakingNews.get(e.payload[action]);
             break;
         case "fetch":
-            HN.fetch();
+            BreakingNews.fetch();
             break;
         case "readlater":
-            HN.readlater(e.payload[action]);
+            BreakingNews.readlater(e.payload[action]);
             break;
     }
 });
@@ -112,5 +110,5 @@ Pebble.addEventListener("webviewclosed", function (e) {
 });
 
 Pebble.addEventListener("ready", function () {
-    setTimeout(HN.fetch, 200);
+    setTimeout(BreakingNews.fetch, 200);
 });
