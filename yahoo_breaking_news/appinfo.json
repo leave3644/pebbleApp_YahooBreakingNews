@@ -11,6 +11,7 @@
   "appKeys": {
       "headline": 0,
       "uuid": 1,
+      "publishedDate": 2,
       "summary": 3,
       "get": 4,
       "fetch": 5,
